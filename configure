@@ -13405,7 +13405,7 @@ then :
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 printf "%s\n" "$withval" >&6; }
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=address $LDFLAGS"
+with_sanitizer_ldflags="-fsanitize=address $with_sanitizer_ldflags"
 # ASan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
 
@@ -13462,7 +13462,7 @@ if test "x$ax_cv_check_cflags___fsanitize_memory" = xyes
 then :
 
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+with_sanitizer_ldflags="-fsanitize=memory -fsanitize-memory-track-origins=2 $with_sanitizer_ldflags"
 
 else case e in #(
   e) as_fn_error $? "The selected compiler doesn't support memory sanitizer" "$LINENO" 5 ;;
@@ -13489,7 +13489,7 @@ then :
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 printf "%s\n" "$withval" >&6; }
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
-LDFLAGS="-fsanitize=undefined $LDFLAGS"
+with_sanitizer_ldflags="-fsanitize=undefined $with_sanitizer_ldflags"
 with_ubsan="yes"
 
 else case e in #(
@@ -13512,7 +13512,7 @@ then :
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 printf "%s\n" "$withval" >&6; }
 BASECFLAGS="-fsanitize=thread $BASECFLAGS"
-LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_sanitizer_ldflags="-fsanitize=thread $with_sanitizer_ldflags"
 with_tsan="yes"
 
 else case e in #(
@@ -34997,6 +34997,9 @@ if test -z "${MODULE_XXLIMITED_35_TRUE}" && test -z "${MODULE_XXLIMITED_35_FALSE
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
+# Merge sanitizer linker flags that were deferred to avoid interfering with
+# configure-time run tests (see with_sanitizer_ldflags).
+LDFLAGS="$with_sanitizer_ldflags $LDFLAGS"
 : "${CONFIG_STATUS=./config.status}"
 ac_write_fail=0
 ac_clean_files_save=$ac_clean_files

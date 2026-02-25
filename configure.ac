@@ -3329,7 +3329,7 @@ AC_ARG_WITH([address_sanitizer],
 [
 AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=address $LDFLAGS"
+with_sanitizer_ldflags="-fsanitize=address $with_sanitizer_ldflags"
 # ASan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
 ],
@@ -3346,7 +3346,7 @@ AC_ARG_WITH(
 AC_MSG_RESULT([$withval])
 AX_CHECK_COMPILE_FLAG([-fsanitize=memory],[
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
-LDFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 $LDFLAGS"
+with_sanitizer_ldflags="-fsanitize=memory -fsanitize-memory-track-origins=2 $with_sanitizer_ldflags"
 ],[AC_MSG_ERROR([The selected compiler doesn't support memory sanitizer])])
 # MSan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
@@ -3363,7 +3363,7 @@ AC_ARG_WITH(
 [
 AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
-LDFLAGS="-fsanitize=undefined $LDFLAGS"
+with_sanitizer_ldflags="-fsanitize=undefined $with_sanitizer_ldflags"
 with_ubsan="yes"
 ],
 [
@@ -3381,7 +3381,7 @@ AC_ARG_WITH(
 [
 AC_MSG_RESULT([$withval])
 BASECFLAGS="-fsanitize=thread $BASECFLAGS"
-LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_sanitizer_ldflags="-fsanitize=thread $with_sanitizer_ldflags"
 with_tsan="yes"
 ],
 [
@@ -8338,6 +8338,9 @@ AC_CONFIG_FILES(m4_normalize([
   Modules/Setup.stdlib
 ]))
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
+# Merge sanitizer linker flags that were deferred to avoid interfering with
+# configure-time run tests (see with_sanitizer_ldflags).
+LDFLAGS="$with_sanitizer_ldflags $LDFLAGS"
 # Generate files like pyconfig.h
 AC_OUTPUT
 
