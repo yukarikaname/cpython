@@ -172,6 +172,24 @@ AC_ARG_WITH([build-python],
     )
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
     PYTHON_FOR_FREEZE="./_bootstrap_python"
+    dnl On macOS with sanitizers enabled, the ASAN-instrumented _freeze_module
+    dnl and _bootstrap_python build tools hang during startup on macOS 26 / Xcode 26
+    dnl due to an ASAN/dyld4 initialization deadlock. Automatically use an external
+    dnl Python for freeze operations if python$PACKAGE_VERSION is found in PATH,
+    dnl to avoid building and running these ASAN-instrumented bootstrap tools.
+    py_san_enabled=no
+    case "$with_address_sanitizer$with_memory_sanitizer$with_thread_sanitizer$with_undefined_behavior_sanitizer" in
+      *yes*) py_san_enabled=yes ;;
+    esac
+    if test "$py_san_enabled" = yes; then
+      case $(uname -s 2>/dev/null) in
+        Darwin*)
+          if command -v "python$PACKAGE_VERSION" >/dev/null 2>&1; then
+            PYTHON_FOR_FREEZE="python$PACKAGE_VERSION"
+          fi
+          ;;
+      esac
+    fi
   ]
 )
 AC_SUBST([PYTHON_FOR_BUILD])
@@ -190,7 +208,7 @@ AS_VAR_IF([cross_compiling], [yes],
     PYTHON_FOR_BUILD_DEPS=''
   ],
   [
-    AS_IF([test -n "$with_build_python"],
+    AS_IF([test "$PYTHON_FOR_FREEZE" != "./_bootstrap_python"],
       [
         dnl With --with-build-python, use external Python for all freeze operations
         dnl (same as cross-compile approach). This avoids running ASAN-instrumented
@@ -209,19 +227,20 @@ AS_VAR_IF([cross_compiling], [yes],
         FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
         FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
         PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
-        dnl When sanitizers are enabled on macOS, building may hang because
-        dnl the ASAN-instrumented _freeze_module and _bootstrap_python build tools
-        dnl cannot initialize due to an ASAN/dyld4 deadlock (Xcode 26+).
-        dnl Provide --with-build-python=python$PACKAGE_VERSION to work around this.
-        AS_IF([test -n "$with_sanitizer_cflags"],
-          [
-            case $ac_sys_system in
-              Darwin*)
-                AC_MSG_WARN([Building with sanitizers on macOS: the build may hang at _freeze_module or _bootstrap_python due to an ASAN initialization issue with dyld4 (Xcode 26+). Provide --with-build-python=python$PACKAGE_VERSION to avoid running ASAN-instrumented build tools.])
-                ;;
-            esac
-          ]
-        )
+        dnl When sanitizers are enabled on macOS and no compatible Python was found
+        dnl in PATH, the build will hang at _freeze_module (ASAN/dyld4 init deadlock
+        dnl on macOS 26 / Xcode 26). Warn the user with clear instructions.
+        py_san_enabled=no
+        case "$with_address_sanitizer$with_memory_sanitizer$with_thread_sanitizer$with_undefined_behavior_sanitizer" in
+          *yes*) py_san_enabled=yes ;;
+        esac
+        if test "$py_san_enabled" = yes; then
+          case $(uname -s 2>/dev/null) in
+            Darwin*)
+              AC_MSG_WARN([Building with sanitizers on macOS: the build will hang at _freeze_module due to an ASAN/dyld4 init deadlock (Xcode 26+). Install python$PACKAGE_VERSION in PATH and re-run configure, or provide --with-build-python=python$PACKAGE_VERSION.])
+              ;;
+          esac
+        fi
       ]
     )
   ]
