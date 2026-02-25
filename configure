@@ -3818,11 +3818,46 @@ then :
 
 else case e in #(
   e)
+
+    if test -n "$with_build_python"
+then :
+
+        # With --with-build-python, use external Python for all freeze operations
+        # (same as cross-compile approach). This avoids running ASAN-instrumented
+        # build tools (_freeze_module, _bootstrap_python) which may hang on some
+        # platforms (e.g. macOS with Xcode 26 due to ASAN/dyld4 init deadlock).
+        FREEZE_MODULE_BOOTSTRAP='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE_BOOTSTRAP_DEPS='$(srcdir)/Programs/_freeze_module.py'
+    FREEZE_MODULE='$(FREEZE_MODULE_BOOTSTRAP)'
+    FREEZE_MODULE_DEPS='$(FREEZE_MODULE_BOOTSTRAP_DEPS)'
+    PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
+
+else case e in #(
+  e)
         FREEZE_MODULE_BOOTSTRAP='./Programs/_freeze_module'
     FREEZE_MODULE_BOOTSTRAP_DEPS="Programs/_freeze_module"
     FREEZE_MODULE='$(PYTHON_FOR_FREEZE) $(srcdir)/Programs/_freeze_module.py'
     FREEZE_MODULE_DEPS="_bootstrap_python \$(srcdir)/Programs/_freeze_module.py"
     PYTHON_FOR_BUILD_DEPS='$(BUILDPYTHON)'
+
+    if test -n "$with_sanitizer_cflags"
+then :
+
+      case $ac_sys_system in #(
+  Darwin*) :
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: WARNING: Building with sanitizers on macOS: the build may hang at _freeze_module or _bootstrap_python due to an ASAN initialization issue with dyld4 (Xcode 26+). Provide --with-build-python=python$PACKAGE_VERSION to avoid running ASAN-instrumented build tools." >&5
+printf "%s\n" "$as_me: WARNING: Building with sanitizers on macOS: the build may hang at _freeze_module or _bootstrap_python due to an ASAN initialization issue with dyld4 (Xcode 26+). Provide --with-build-python=python$PACKAGE_VERSION to avoid running ASAN-instrumented build tools." >&2;}
+   ;; #(
+  *) :
+     ;;
+esac
+
+fi
+
+ ;;
+esac
+fi
 
  ;;
 esac
