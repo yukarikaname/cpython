@@ -13404,7 +13404,7 @@ then :
   withval=$with_address_sanitizer;
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 printf "%s\n" "$withval" >&6; }
-BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
+with_sanitizer_cflags="-fsanitize=address -fno-omit-frame-pointer $with_sanitizer_cflags"
 with_sanitizer_ldflags="-fsanitize=address $with_sanitizer_ldflags"
 # ASan works by controlling memory allocation, our own malloc interferes.
 with_pymalloc="no"
@@ -13461,7 +13461,7 @@ printf "%s\n" "$ax_cv_check_cflags___fsanitize_memory" >&6; }
 if test "x$ax_cv_check_cflags___fsanitize_memory" = xyes
 then :
 
-BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
+with_sanitizer_cflags="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $with_sanitizer_cflags"
 with_sanitizer_ldflags="-fsanitize=memory -fsanitize-memory-track-origins=2 $with_sanitizer_ldflags"
 
 else case e in #(
@@ -13488,7 +13488,7 @@ then :
   withval=$with_undefined_behavior_sanitizer;
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 printf "%s\n" "$withval" >&6; }
-BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
+with_sanitizer_cflags="-fsanitize=undefined $with_sanitizer_cflags"
 with_sanitizer_ldflags="-fsanitize=undefined $with_sanitizer_ldflags"
 with_ubsan="yes"
 
@@ -13511,7 +13511,7 @@ then :
   withval=$with_thread_sanitizer;
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
 printf "%s\n" "$withval" >&6; }
-BASECFLAGS="-fsanitize=thread $BASECFLAGS"
+with_sanitizer_cflags="-fsanitize=thread $with_sanitizer_cflags"
 with_sanitizer_ldflags="-fsanitize=thread $with_sanitizer_ldflags"
 with_tsan="yes"
 
@@ -34997,8 +34997,9 @@ if test -z "${MODULE_XXLIMITED_35_TRUE}" && test -z "${MODULE_XXLIMITED_35_FALSE
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
-# Merge sanitizer linker flags that were deferred to avoid interfering with
-# configure-time run tests (see with_sanitizer_ldflags).
+# Merge sanitizer flags that were deferred to avoid interfering with
+# configure-time run tests (see with_sanitizer_cflags, with_sanitizer_ldflags).
+BASECFLAGS="$with_sanitizer_cflags $BASECFLAGS"
 LDFLAGS="$with_sanitizer_ldflags $LDFLAGS"
 : "${CONFIG_STATUS=./config.status}"
 ac_write_fail=0
